@@ -17,13 +17,22 @@ import math
 import sys
 import logging
 import argparse
+import os
 
 
+
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_file_path = os.path.join(script_dir, "gcode_debug.log")
+
+
+
+# Configure logging to save in the script's directory
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("gcode_debug.log"),
+        logging.FileHandler(log_file_path),
         logging.StreamHandler(sys.stdout)
     ]
 )
