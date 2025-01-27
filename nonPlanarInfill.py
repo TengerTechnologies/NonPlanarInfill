@@ -72,7 +72,7 @@ def process_gcode(input_file, amplitude, frequency):
             z_match = re.search(r'Z([-+]?\d*\.?\d+)', line)
             if z_match:
                 current_z = float(z_match.group(1))
-        if ';TYPE:Solid infill' in line:
+        if ';TYPE:Solid infill' or ';TYPE:Internal solid infill' in line:
             solid_infill_heights.append(current_z)
 
     def update_layer_bounds(current_z):
@@ -93,7 +93,7 @@ def process_gcode(input_file, amplitude, frequency):
                 update_layer_bounds(current_z)
                 logging.debug(f"Layer change detected: Z = {current_z}")
 
-        if ';TYPE:Internal infill' in line:
+        if (';TYPE:Internal infill' in line or ';TYPE:Sparse infill' in line) and ';TYPE:Inner wall' not in line and ';TYPE:Outer wall' not in line:
             in_infill = True
             logging.debug(f"Entered infill section at line {line_num}.")
         elif line.startswith(';TYPE:'):
