@@ -17,13 +17,22 @@ import math
 import sys
 import logging
 import argparse
+import os
 
 
+
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+log_file_path = os.path.join(script_dir, "gcode_debug.log")
+
+
+
+# Configure logging to save in the script's directory
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("gcode_debug.log"),
+        logging.FileHandler(log_file_path),
         logging.StreamHandler(sys.stdout)
     ]
 )
@@ -60,6 +69,9 @@ def process_gcode(input_file, amplitude, frequency):
     last_bottom_layer = 0
     next_top_layer = float('inf')
     processed_indices = set()  
+    match_comp = re.compile(r'X([-+]?\d*\.?\d+)\s*Y([-+]?\d*\.?\d+)\s*E([-+]?\d*\.?\d+)')
+    next_match_comp = re.compile(r'X([-+]?\d*\.?\d+)\s*Y([-+]?\d*\.?\d+)\s*E([-+]?\d*\.?\d+)')
+    Z_match_comp = re.compile(r'Z([-+]?\d*\.?\d+)')
 
     logging.info(f"Processing file: {input_file}")
 
@@ -69,7 +81,7 @@ def process_gcode(input_file, amplitude, frequency):
     solid_infill_heights = []
     for line in lines:
         if line.startswith('G1') and 'Z' in line:
-            z_match = re.search(r'Z([-+]?\d*\.?\d+)', line)
+            z_match = Z_match_comp.search(line)
             if z_match:
                 current_z = float(z_match.group(1))
         if ';TYPE:Solid infill' in line:
@@ -86,7 +98,7 @@ def process_gcode(input_file, amplitude, frequency):
 
     for line_num, line in enumerate(lines):
         if line.startswith('G1') and 'Z' in line:
-            z_match = re.search(r'Z([-+]?\d*\.?\d+)', line)
+            z_match = Z_match_comp.search(line)
             if z_match:
                 current_z = float(z_match.group(1))
                 reset_modulation_state()
@@ -103,7 +115,7 @@ def process_gcode(input_file, amplitude, frequency):
 
         if in_infill and line_num not in processed_indices and 'E' in line:
             processed_indices.add(line_num)
-            match = re.search(r'X([-+]?\d*\.?\d+)\s*Y([-+]?\d*\.?\d+)\s*E([-+]?\d*\.?\d+)', line)
+            match = match_comp.search(line)
             if match:
                 x1 = float(match.group(1))
                 y1 = float(match.group(2))
@@ -112,7 +124,7 @@ def process_gcode(input_file, amplitude, frequency):
                 next_line_index = line_num + 1
                 if next_line_index < len(lines):
                     next_line = lines[next_line_index]
-                    next_match = re.search(r'X([-+]?\d*\.?\d+)\s*Y([-+]?\d*\.?\d+)\s*E([-+]?\d*\.?\d+)', next_line)
+                    next_match = next_match_comp.search(next_line)
                     if next_match:
                         x2 = float(next_match.group(1))
                         y2 = float(next_match.group(2))
